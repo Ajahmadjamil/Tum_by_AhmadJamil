@@ -1,0 +1,16 @@
+insert into public.poetry (
+  id, poet_id, book_id, category_id, slug, title_urdu, sort_order, is_published, published_at
+)
+select
+  (x->>'id')::uuid,
+  '485b52b3-678e-4b97-8b92-0151945acb81'::uuid,
+  '7a52aa3b-4d70-40b2-8848-a7655c3f1ece'::uuid,
+  c.id,
+  x->>'slug',
+  x->>'title',
+  (x->>'sort')::int,
+  true,
+  now()
+from jsonb_array_elements($poems$[{"id":"cbda0029-e6a2-4b20-986f-a9cbf8b71df0","cat":"ghazal","slug":"tum-p053","title":"قسمت","sort":53},{"id":"88484c62-8cea-4efa-9d33-7488a1cb32dd","cat":"shair","slug":"tum-p054","title":"جانے کیوں","sort":54},{"id":"42bcf1e0-8233-40ea-a116-aff08ca08b5a","cat":"ghazal","slug":"tum-p055","title":"وہ شخص","sort":55},{"id":"890e6bbf-f377-4c79-a74a-d1d92a4e8573","cat":"nazm","slug":"tum-p056","title":"میرے جہاں کے سیریوس","sort":56},{"id":"b12f3533-0af7-4e67-8088-7eda35a99c4d","cat":"ghazal","slug":"tum-p057","title":"نئی زندگی","sort":57},{"id":"9554d4b5-29d1-4593-a107-d2a942f2e6a7","cat":"ghazal","slug":"tum-p058","title":"خواب بے تعبیر","sort":58},{"id":"1691f41f-75f3-4f3f-ae6a-4b062f859968","cat":"ghazal","slug":"tum-p059","title":"زندان","sort":59},{"id":"c12776e8-64c5-432a-8dd5-6bb902c8fd73","cat":"ghazal","slug":"tum-p060","title":"غم","sort":60},{"id":"f2db53aa-c3eb-4496-b551-fce24531f2c0","cat":"ghazal","slug":"tum-p061","title":"شوقِ وصلِ تمنا","sort":61},{"id":"0ab8bfad-5799-4e76-9ce0-293053309874","cat":"qataa","slug":"tum-p062","title":"ناکام محبت","sort":62},{"id":"1461de81-8201-4c9a-a570-38d504c22240","cat":"nazm","slug":"tum-p063","title":"کوئی اور","sort":63},{"id":"ebfc4392-7d78-4b57-ad60-f5fa0add1504","cat":"ghazal","slug":"tum-p064","title":"گھڑی انتظار","sort":64},{"id":"1bf6ee0e-47f5-45a7-867b-f2ddc744c519","cat":"ghazal","slug":"tum-p065","title":"تمنا کا گھر","sort":65},{"id":"95ff9bfa-c651-4083-86b9-a8f4711f107e","cat":"ghazal","slug":"tum-p066","title":"قفس","sort":66},{"id":"d72ef982-d009-416e-8d73-cebaecce5173","cat":"shair","slug":"tum-p067","title":"زندگی","sort":67},{"id":"4c6eb213-a244-46b6-b50a-2b33b97adc3c","cat":"qataa","slug":"tum-p068","title":"نئی شمع","sort":68},{"id":"03cbf10c-a56c-482a-8d4b-33e1c7d85b29","cat":"ghazal","slug":"tum-p069","title":"ہوا","sort":69},{"id":"8a929484-3713-404b-92dd-d73f5918d4fe","cat":"ghazal","slug":"tum-p070","title":"پچھلی پہر","sort":70},{"id":"d457fb50-3669-4296-aa8d-4e463f538e53","cat":"ghazal","slug":"tum-p071","title":"دھن","sort":71},{"id":"3c1182cf-eed8-436d-8b4a-0a8b5654906e","cat":"ghazal","slug":"tum-p072","title":"تو کیا ہوا","sort":72},{"id":"066d5a99-4c5b-48c1-bf39-b37c78128228","cat":"qataa","slug":"tum-p073","title":"شکستہ دل","sort":73},{"id":"b0f6419b-0ace-42f6-a28e-a494df6095a8","cat":"ghazal","slug":"tum-p074","title":"کوئی نہیں","sort":74},{"id":"7c6f97cf-ec94-45cd-bcf9-205998e527cc","cat":"ghazal","slug":"tum-p075","title":"آبرو","sort":75},{"id":"16674722-b2e6-4ec5-9d4d-05d0a9b300f3","cat":"nazm","slug":"tum-p076","title":"تم ہو","sort":76},{"id":"fc62d756-211b-4119-9edb-3f224218f912","cat":"ghazal","slug":"tum-p077","title":"آوارگی","sort":77},{"id":"a8d28313-eb11-4ab5-b825-121e1843886f","cat":"nazm","slug":"tum-p078","title":"مجھے تم یاد آئے","sort":78}]$poems$::jsonb) x
+join public.categories c on c.slug = x->>'cat'
+on conflict (slug) do nothing;

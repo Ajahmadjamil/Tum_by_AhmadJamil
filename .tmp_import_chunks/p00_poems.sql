@@ -1,0 +1,16 @@
+insert into public.poetry (
+  id, poet_id, book_id, category_id, slug, title_urdu, sort_order, is_published, published_at
+)
+select
+  (x->>'id')::uuid,
+  '485b52b3-678e-4b97-8b92-0151945acb81'::uuid,
+  '7a52aa3b-4d70-40b2-8848-a7655c3f1ece'::uuid,
+  c.id,
+  x->>'slug',
+  x->>'title',
+  (x->>'sort')::int,
+  true,
+  now()
+from jsonb_array_elements($poems$[{"id":"b50a86be-db36-446f-8f6b-a4c0b3648d1e","cat":"qataa","slug":"tum-p001","title":"کہانی","sort":1},{"id":"7c2f98d6-da38-471a-b50f-6a1167013b0a","cat":"ghazal","slug":"tum-p002","title":"دھواں","sort":2},{"id":"b01a2059-121a-4cb3-9881-f3e6338f0a3e","cat":"nazm","slug":"tum-p003","title":"آج سے کئی برسوں بعد","sort":3},{"id":"cf086699-693a-4e20-8778-7c1aca6912f8","cat":"ghazal","slug":"tum-p004","title":"آدمی","sort":4},{"id":"6ee39a16-e721-4c6f-b756-2ddaa4adf912","cat":"ghazal","slug":"tum-p005","title":"یاد","sort":5},{"id":"90713d0c-3797-47ce-a38a-159e8bd95f38","cat":"ghazal","slug":"tum-p006","title":"درد","sort":6},{"id":"b2748188-293b-4a00-8b29-286dc4d5917e","cat":"nazm","slug":"tum-p007","title":"بھروسہ","sort":7},{"id":"6cda534d-b169-4ffc-9993-253202b20033","cat":"qataa","slug":"tum-p008","title":"بادصبا","sort":8},{"id":"57eaa020-dd58-42a9-9b4f-2968fcd5f7db","cat":"ghazal","slug":"tum-p009","title":"سوچ کا ساماں","sort":9},{"id":"f15b8028-ca7e-4f3d-b6f4-23a1a19debb4","cat":"nazm","slug":"tum-p010","title":"خوف","sort":10},{"id":"954e52b2-6c84-4298-8332-d6639b05d754","cat":"ghazal","slug":"tum-p011","title":"زندان یوسف","sort":11},{"id":"630cc87d-69cd-4332-bf30-2ca81fac1e77","cat":"nazm","slug":"tum-p012","title":"چاندنی","sort":12},{"id":"4ba4b10c-5386-4026-816d-d256a77a5bf2","cat":"ghazal","slug":"tum-p013","title":"میں","sort":13},{"id":"2f6d17fa-6bb9-41f5-91d9-1db9f64870a4","cat":"tehreer","slug":"tum-p014","title":"تم","sort":14},{"id":"1508150e-96ef-40b7-b89d-ba771b4d6b45","cat":"tehreer","slug":"tum-p015","title":"ستارے","sort":15},{"id":"31a9394e-707f-4366-bf72-bf128730b7b8","cat":"ghazal","slug":"tum-p016","title":"اپنا","sort":16},{"id":"a02efb59-3f69-46c1-af54-1eacaacaa73b","cat":"nazm","slug":"tum-p017","title":"اداسی","sort":17},{"id":"7095500b-9117-477e-ae40-aa4e51d1b715","cat":"nazm","slug":"tum-p018","title":"شاد","sort":18},{"id":"b6efaf6a-de31-44c3-9ef9-318641a0eadd","cat":"ghazal","slug":"tum-p019","title":"جاڑوں کی بات","sort":19},{"id":"5630f0a7-ee36-4d37-9e31-73a71074c273","cat":"nazm","slug":"tum-p020","title":"جانے دے","sort":20},{"id":"76518175-248a-4f3b-a040-8b101901788a","cat":"ghazal","slug":"tum-p021","title":"دھواں","sort":21},{"id":"b829e0f7-2547-4ffd-93d0-8a5a15525a07","cat":"ghazal","slug":"tum-p022","title":"جی میں ہیں سوال کئی","sort":22},{"id":"aacce03f-d956-41b3-89e9-adb635a126f6","cat":"qataa","slug":"tum-p023","title":"عام سا لڑکا","sort":23},{"id":"dec0e57f-3ff5-4b30-baaa-ec253a47029e","cat":"nazm","slug":"tum-p024","title":"ہنگامِ سحر","sort":24},{"id":"6178a314-84a2-43fa-979e-935b28994538","cat":"nazm","slug":"tum-p025","title":"شب فراق اور گھٹا","sort":25},{"id":"d3c4fe88-4a47-4799-8f4a-da2cadbcc612","cat":"qataa","slug":"tum-p026","title":"نام","sort":26}]$poems$::jsonb) x
+join public.categories c on c.slug = x->>'cat'
+on conflict (slug) do nothing;

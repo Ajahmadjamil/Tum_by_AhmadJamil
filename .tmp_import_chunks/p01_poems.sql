@@ -1,0 +1,16 @@
+insert into public.poetry (
+  id, poet_id, book_id, category_id, slug, title_urdu, sort_order, is_published, published_at
+)
+select
+  (x->>'id')::uuid,
+  '485b52b3-678e-4b97-8b92-0151945acb81'::uuid,
+  '7a52aa3b-4d70-40b2-8848-a7655c3f1ece'::uuid,
+  c.id,
+  x->>'slug',
+  x->>'title',
+  (x->>'sort')::int,
+  true,
+  now()
+from jsonb_array_elements($poems$[{"id":"2c44bc5a-a1df-4222-9d6e-47dade8f97d1","cat":"qataa","slug":"tum-p027","title":"چراغ","sort":27},{"id":"b8bd4914-f8bc-4312-90eb-e7f8d3302c48","cat":"qataa","slug":"tum-p028","title":"بازی","sort":28},{"id":"6559a5d9-5eb5-44a3-8483-1471e6c943c8","cat":"nazm","slug":"tum-p029","title":"عہد","sort":29},{"id":"665e475e-6aa7-403b-8da7-1b37050c7b77","cat":"ghazal","slug":"tum-p030","title":"اپنا نہیں","sort":30},{"id":"01c4c40e-1db1-4fef-91dc-d7f55bbdb6ad","cat":"ghazal","slug":"tum-p031","title":"داغ","sort":31},{"id":"d9fe8324-5259-4bd5-ac86-fa2934b55c69","cat":"ghazal","slug":"tum-p032","title":"مسیحا","sort":32},{"id":"f77fed4a-6da7-487c-9098-9e99f9cd3988","cat":"ghazal","slug":"tum-p033","title":"غم فرقت","sort":33},{"id":"4d2c11ed-7976-4389-8414-c5050c62931d","cat":"ghazal","slug":"tum-p034","title":"زیاں","sort":34},{"id":"6b54ca78-b76f-44e3-8fa9-14ec5237b891","cat":"ghazal","slug":"tum-p035","title":"جب دل ہی بجھ جائے","sort":35},{"id":"2d6f21a9-f72b-40f7-80d9-089429db0ed4","cat":"nazm","slug":"tum-p036","title":"تیری یاد","sort":36},{"id":"55a658bd-cc21-44c9-b4cf-8faf9893b95d","cat":"ghazal","slug":"tum-p037","title":"شور","sort":37},{"id":"63726033-991a-4e5c-9432-b97e8b50f6a0","cat":"nazm","slug":"tum-p038","title":"تم نہیں","sort":38},{"id":"83248072-ba08-4f17-a6b1-e7b74bfb0083","cat":"shair","slug":"tum-p039","title":"پگلی چاندنی","sort":39},{"id":"df15dbee-694b-4e98-9036-b214cee83e80","cat":"nazm","slug":"tum-p040","title":"بےحد دنوں کے بعد","sort":40},{"id":"9ca080fb-bc36-4e50-b357-4dc27ef18f6b","cat":"nazm","slug":"tum-p041","title":"اداس دل","sort":41},{"id":"8faa4928-c834-4950-ab28-3c6d4d8fb04c","cat":"nazm","slug":"tum-p042","title":"وہ گزرے دن","sort":42},{"id":"6e6b5d7d-6602-4e81-a2e2-3ff5ba2ddddf","cat":"ghazal","slug":"tum-p043","title":"وہ کوئی","sort":43},{"id":"b3b433c5-ca37-41b4-94e7-650d3353762a","cat":"ghazal","slug":"tum-p044","title":"تو کیا غم ہے","sort":44},{"id":"3ea76f09-78ea-4347-9f2d-2c3c971d0b3d","cat":"nazm","slug":"tum-p045","title":"آرزوئیں","sort":45},{"id":"416f1616-a400-4c4d-aefa-01dc2d1922af","cat":"ghazal","slug":"tum-p046","title":"صدا","sort":46},{"id":"a3493d5d-3ca7-4021-8d52-5c27c9fb85d1","cat":"nazm","slug":"tum-p047","title":"وہم","sort":47},{"id":"dba0f440-a2cd-446d-862c-b20f334aba45","cat":"nazm","slug":"tum-p048","title":"تم مل جاتے تو کتنا اچھا ہوتا","sort":48},{"id":"07af5fb5-0375-40d7-96df-de242a1ee83c","cat":"ghazal","slug":"tum-p049","title":"ستمبر","sort":49},{"id":"61a364ce-3f9c-45b8-8287-d82b9989b5f4","cat":"qataa","slug":"tum-p050","title":"گھپ تنہائی","sort":50},{"id":"cc786ed8-279c-4f71-8428-146c88d308ff","cat":"ghazal","slug":"tum-p051","title":"خواہشوں کے انبار","sort":51},{"id":"69cd98e9-82c8-4fb4-a68b-7c079ded82c9","cat":"ghazal","slug":"tum-p052","title":"محمد کا گھرانا","sort":52}]$poems$::jsonb) x
+join public.categories c on c.slug = x->>'cat'
+on conflict (slug) do nothing;

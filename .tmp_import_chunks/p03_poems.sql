@@ -1,0 +1,16 @@
+insert into public.poetry (
+  id, poet_id, book_id, category_id, slug, title_urdu, sort_order, is_published, published_at
+)
+select
+  (x->>'id')::uuid,
+  '485b52b3-678e-4b97-8b92-0151945acb81'::uuid,
+  '7a52aa3b-4d70-40b2-8848-a7655c3f1ece'::uuid,
+  c.id,
+  x->>'slug',
+  x->>'title',
+  (x->>'sort')::int,
+  true,
+  now()
+from jsonb_array_elements($poems$[{"id":"5ec87c10-a510-4ef3-a1e6-16a75321b148","cat":"ghazal","slug":"tum-p079","title":"مسیحائی","sort":79},{"id":"f6fffd9b-3c6a-487d-9821-459e2baaa8d3","cat":"ghazal","slug":"tum-p080","title":"سپنوں کے دیپ","sort":80},{"id":"e45934b4-3b76-4247-8227-6c7ae94b5db9","cat":"ghazal","slug":"tum-p081","title":"کتنے اچھے لگتے ہو","sort":81},{"id":"9e641f15-7e20-4085-9d30-b937ce8a9f62","cat":"ghazal","slug":"tum-p082","title":"بےقراری","sort":82},{"id":"d5c30334-ef25-4bcb-b5ef-2ed2b578710a","cat":"ghazal","slug":"tum-p083","title":"پریت","sort":83},{"id":"589d05cd-c5fd-4381-9aec-a8b4d30811aa","cat":"ghazal","slug":"tum-p084","title":"خار","sort":84},{"id":"d7df33f8-b7bd-4b05-ae40-b776524ab669","cat":"ghazal","slug":"tum-p085","title":"اشارے","sort":85},{"id":"b604db80-8ae6-461f-9eac-8762eeb8c815","cat":"ghazal","slug":"tum-p086","title":"خبر","sort":86},{"id":"b1df3281-2c65-4d7a-862a-921eeaeb7633","cat":"ghazal","slug":"tum-p087","title":"اکتاہٹ","sort":87},{"id":"8fc3b5a1-8eac-447c-997e-82c588e387d9","cat":"ghazal","slug":"tum-p088","title":"ایک جگنو","sort":88},{"id":"4713408f-0a6a-4062-9d2a-59c1743520c0","cat":"ghazal","slug":"tum-p089","title":"روداد","sort":89},{"id":"7362e9a5-0dde-4643-9005-9455008c1697","cat":"nazm","slug":"tum-p090","title":"ستارے","sort":90},{"id":"b65782cb-150b-4f02-afcf-3d9fe3efb695","cat":"ghazal","slug":"tum-p091","title":"معرفت","sort":91},{"id":"992dbe72-284e-4bc1-87bd-c033f683ad6f","cat":"nazm","slug":"tum-p092","title":"غمِ زندگی ہے غمِ عاشقی","sort":92},{"id":"23a1f42f-36cb-4ecd-a974-ba9f8d0dceba","cat":"ghazal","slug":"tum-p093","title":"وہ بات","sort":93},{"id":"24d012ae-31db-462f-afa0-78ec5c3a3905","cat":"ghazal","slug":"tum-p094","title":"چپ","sort":94},{"id":"dbca357b-4ccb-4d14-9497-ac957578132d","cat":"ghazal","slug":"tum-p095","title":"اداس","sort":95},{"id":"b45f8928-c7bd-4daa-80d1-4a10475f8445","cat":"nazm","slug":"tum-p096","title":"میں شاعر ہوں لڑکی","sort":96},{"id":"90de67ba-e3a6-4084-a5f6-f5d80e4b8a16","cat":"ghazal","slug":"tum-p097","title":"رستہ","sort":97},{"id":"8b874fbc-e443-441e-8962-2d0ac8d0373b","cat":"ghazal","slug":"tum-p098","title":"اظہارِ تمنا","sort":98},{"id":"c4a329b3-22fd-4bca-9b38-068fb0a4423a","cat":"ghazal","slug":"tum-p099","title":"گفتگو عام","sort":99},{"id":"02f0b2a2-ef08-4cff-800e-dc1b3d6d749c","cat":"ghazal","slug":"tum-p100","title":"درد دل","sort":100},{"id":"113a8e61-ce10-49a0-b6c0-e16456de500f","cat":"nazm","slug":"tum-p101","title":"شجر","sort":101},{"id":"48dccbaf-180e-40cb-80fe-baee517ebb01","cat":"nazm","slug":"tum-p102","title":"خسارے","sort":102},{"id":"d4ff8478-1d8c-4df9-b636-cdfc8987ced9","cat":"nazm","slug":"tum-p103","title":"ٹرین کی برتھ","sort":103},{"id":"6fbff020-b1a2-42d8-9f59-a2899317ddbd","cat":"ghazal","slug":"tum-p104","title":"بے اثر","sort":104}]$poems$::jsonb) x
+join public.categories c on c.slug = x->>'cat'
+on conflict (slug) do nothing;

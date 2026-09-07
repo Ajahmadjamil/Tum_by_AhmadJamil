@@ -1,0 +1,14 @@
+{
+  "poems": 130,
+  "verses": 1249,
+  "by_category": {
+    "qataa": 11,
+    "ghazal": 78,
+    "nazm": 35,
+    "tehreer": 2,
+    "shair": 4
+  },
+  "sql_bytes": 270380,
+  "first_title": "کہانی",
+  "last_title": "بس تیرا غم ہے"
+}

@@ -1,0 +1,16 @@
+insert into public.poetry (
+  id, poet_id, book_id, category_id, slug, title_urdu, sort_order, is_published, published_at
+)
+select
+  (x->>'id')::uuid,
+  '485b52b3-678e-4b97-8b92-0151945acb81'::uuid,
+  '7a52aa3b-4d70-40b2-8848-a7655c3f1ece'::uuid,
+  c.id,
+  x->>'slug',
+  x->>'title',
+  (x->>'sort')::int,
+  true,
+  now()
+from jsonb_array_elements($poems$[{"id":"8c0ce3a1-9f4b-4140-b63d-49818b7d3828","cat":"nazm","slug":"tum-p105","title":"تھک چکا ہوں میں","sort":105},{"id":"e86c19f3-9983-4a78-a278-09bfe1bdd5a6","cat":"ghazal","slug":"tum-p106","title":"کیا ہے؟","sort":106},{"id":"82bd1c9b-cd81-43b9-be74-b1efcccfb25f","cat":"ghazal","slug":"tum-p107","title":"گیسو","sort":107},{"id":"5c8a10a6-fc1e-4aed-b6a7-b84bb4e76c3f","cat":"ghazal","slug":"tum-p108","title":"شب اندھیرا","sort":108},{"id":"8a718495-a534-4188-a182-cf7f9c36a101","cat":"ghazal","slug":"tum-p109","title":"کیا کہیں","sort":109},{"id":"b896c1bc-49ce-4a54-b520-922a23d74bcb","cat":"ghazal","slug":"tum-p110","title":"تا دم آخر دوری","sort":110},{"id":"da0060b8-9d9d-4aa2-afe2-b88a1c893bec","cat":"nazm","slug":"tum-p111","title":"اجیرن","sort":111},{"id":"59a219f0-8095-4baa-ba60-ff866216459d","cat":"ghazal","slug":"tum-p112","title":"یچ و خم","sort":112},{"id":"2f1b7d58-bf69-4615-a419-d10eab33ff02","cat":"ghazal","slug":"tum-p113","title":"رمز","sort":113},{"id":"c7cc0445-306b-41fc-9b6b-c0eb865dd3bb","cat":"ghazal","slug":"tum-p114","title":"سلام","sort":114},{"id":"a811429c-ff0a-4437-984d-d430e88fde16","cat":"ghazal","slug":"tum-p115","title":"نیند","sort":115},{"id":"f92bc97d-bb6a-44e8-ac49-3ae63ee00b0e","cat":"ghazal","slug":"tum-p116","title":"احمد ؔ گمراہ سہی کوئی مُلّا نہیں","sort":116},{"id":"30ecaab5-56fe-49ae-b5c9-67391f88f087","cat":"ghazal","slug":"tum-p117","title":"جستجو","sort":117},{"id":"7cc25f33-1d36-44bf-8992-bceb21494000","cat":"shair","slug":"tum-p118","title":"زندگی کا افسانہ","sort":118},{"id":"28595974-f872-4bee-abf1-5ab5b41db65d","cat":"ghazal","slug":"tum-p119","title":"اگر ملا ہوتا","sort":119},{"id":"ecab037b-e0a1-4781-b428-de92b23a4bec","cat":"nazm","slug":"tum-p120","title":"تم اور ہم","sort":120},{"id":"0a3a6696-f36c-4e6a-813a-017afe42a25d","cat":"nazm","slug":"tum-p121","title":"پھر ملیں گے ہم........","sort":121},{"id":"4438b5d8-b33e-4275-837c-1e2b6b16e2b3","cat":"ghazal","slug":"tum-p122","title":"ناگوار","sort":122},{"id":"f8fb35c5-7b79-4432-9b7e-326466898cd2","cat":"ghazal","slug":"tum-p123","title":"عکس","sort":123},{"id":"168e96a2-25e5-44be-98c9-5793478ac164","cat":"ghazal","slug":"tum-p124","title":"کھلونا","sort":124},{"id":"d3f578e2-9565-480e-838f-38e06b014c4d","cat":"nazm","slug":"tum-p125","title":"دو ستارے","sort":125},{"id":"485e0263-8942-4ac3-810a-2903a3ff1ca2","cat":"nazm","slug":"tum-p126","title":"مسیحائی فقط رسوائی","sort":126},{"id":"f2e464c8-3d45-47ae-a674-f4fc097b4b82","cat":"ghazal","slug":"tum-p127","title":"وہ لوگ","sort":127},{"id":"c99a6d62-27d9-48d8-a1e4-bddc6e9f6737","cat":"qataa","slug":"tum-p128","title":"ہجرتیں","sort":128},{"id":"faf69b54-7040-49e9-98a1-df6285211812","cat":"ghazal","slug":"tum-p129","title":"سوچ کا ساماں","sort":129},{"id":"64a07005-cf50-4b5d-8daa-ad88185871e0","cat":"nazm","slug":"tum-p130","title":"بس تیرا غم ہے","sort":130}]$poems$::jsonb) x
+join public.categories c on c.slug = x->>'cat'
+on conflict (slug) do nothing;
