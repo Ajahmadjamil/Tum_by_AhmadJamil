@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/haptics/app_haptics.dart';
 import '../../../core/locale/locale_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -23,11 +24,15 @@ class BookCarousel extends StatelessWidget {
 
     return SizedBox(
       height: 250,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: books.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
+      child: ScrollHaptics(
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const ClampingScrollPhysics(),
+          cacheExtent: 240,
+          addAutomaticKeepAlives: false,
+          itemCount: books.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          itemBuilder: (context, index) {
           final book = books[index];
           final title = locale.pick(
             urdu: book.titleUrdu,
@@ -38,6 +43,7 @@ class BookCarousel extends StatelessWidget {
             english: book.poetNameEnglish ?? '',
           );
           return GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () => onTapBook(book),
             child: SizedBox(
               width: 148,
@@ -55,6 +61,9 @@ class BookCarousel extends StatelessWidget {
                             CachedNetworkImage(
                               imageUrl: book.coverImageUrl!,
                               fit: BoxFit.cover,
+                              memCacheWidth: 400,
+                              fadeInDuration: Duration.zero,
+                              fadeOutDuration: Duration.zero,
                             )
                           else
                             DecoratedBox(
@@ -140,6 +149,7 @@ class BookCarousel extends StatelessWidget {
             ),
           );
         },
+        ),
       ),
     );
   }

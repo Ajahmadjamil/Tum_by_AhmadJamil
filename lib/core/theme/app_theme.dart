@@ -5,14 +5,15 @@ import 'app_colors.dart';
 import 'app_text_styles.dart';
 
 abstract final class AppTheme {
-  static ThemeData get light => _build(AppPalette.whatsappLight, Brightness.light);
+  static final ThemeData light = _build(AppPalette.whatsappLight, Brightness.light);
 
-  static ThemeData get dark => _build(AppPalette.whatsappDark, Brightness.dark);
+  static final ThemeData dark = _build(AppPalette.whatsappDark, Brightness.dark);
 
   static ThemeData _build(AppPalette palette, Brightness brightness) {
     final base = ThemeData(
       useMaterial3: true,
       brightness: brightness,
+      splashFactory: InkRipple.splashFactory,
       scaffoldBackgroundColor: palette.canvas,
       colorScheme: ColorScheme(
         brightness: brightness,
@@ -24,6 +25,12 @@ abstract final class AppTheme {
         onSurface: palette.text,
         error: palette.error,
         onError: palette.onDark,
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
       ),
     );
 

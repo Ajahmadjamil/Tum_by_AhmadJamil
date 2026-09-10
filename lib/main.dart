@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:tum/core/notification/notification.dart';
 
+import 'core/auth/auth_controller.dart';
 import 'core/locale/locale_controller.dart';
 import 'core/supabase/app_supabase.dart';
 import 'core/theme/app_theme.dart';
@@ -16,17 +20,17 @@ Future<void> main() async {
     SystemUiMode.manual,
     overlays: const [SystemUiOverlay.top],
   );
+  await FirebaseNotificationService.initialize();
   await AppSupabase.initialize();
 
   final localeController = LocaleController();
   final themeController = ThemeController();
   final catalogController = CatalogController();
-  final favoritesController = FavoritesController();
+  final authController = AuthController();
+  final favoritesController = FavoritesController(auth: authController);
   await Future.wait([
     localeController.load(),
     themeController.load(),
-    catalogController.load(),
-    favoritesController.load(),
   ]);
 
   runApp(
@@ -34,9 +38,17 @@ Future<void> main() async {
       localeController: localeController,
       themeController: themeController,
       catalogController: catalogController,
+      authController: authController,
       favoritesController: favoritesController,
     ),
   );
+
+  unawaited(authController.load());
+  unawaited(favoritesController.load());
+  unawaited(() async {
+    await catalogController.hydrateFromCache();
+    await catalogController.refreshFromNetwork();
+  }());
 }
 
 class TumApp extends StatelessWidget {
@@ -45,12 +57,14 @@ class TumApp extends StatelessWidget {
     required this.localeController,
     required this.themeController,
     required this.catalogController,
+    required this.authController,
     required this.favoritesController,
   });
 
   final LocaleController localeController;
   final ThemeController themeController;
   final CatalogController catalogController;
+  final AuthController authController;
   final FavoritesController favoritesController;
 
   @override
@@ -60,29 +74,15 @@ class TumApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: localeController),
         ChangeNotifierProvider.value(value: themeController),
         ChangeNotifierProvider.value(value: catalogController),
+        ChangeNotifierProvider.value(value: authController),
         ChangeNotifierProvider.value(value: favoritesController),
       ],
       child: Consumer2<LocaleController, ThemeController>(
         builder: (context, locale, theme, _) {
-          SystemChrome.setEnabledSystemUIMode(
-            SystemUiMode.manual,
-            overlays: const [SystemUiOverlay.top],
-          );
-          SystemChrome.setSystemUIOverlayStyle(
-            SystemUiOverlayStyle(
-              statusBarColor: Colors.transparent,
-              statusBarIconBrightness:
-                  theme.isDark ? Brightness.light : Brightness.dark,
-              systemNavigationBarColor: Colors.transparent,
-              systemNavigationBarDividerColor: Colors.transparent,
-              systemNavigationBarContrastEnforced: false,
-              systemNavigationBarIconBrightness:
-                  theme.isDark ? Brightness.light : Brightness.dark,
-            ),
-          );
           return MaterialApp(
             title: locale.strings.appName,
             debugShowCheckedModeBanner: false,
+            themeAnimationDuration: Duration.zero,
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: theme.mode,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/haptics/app_haptics.dart';
 import '../../../core/locale/locale_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -23,18 +24,23 @@ class CategoryTiles extends StatelessWidget {
     final items = <CategoryRow?>[null, ...categories];
     return SizedBox(
       height: 236,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final category = items[index];
-          return _CategoryTile(
-            category: category,
-            count: countFor(category?.slug),
-            onTap: () => onTap(category?.slug),
-          );
-        },
+      child: ScrollHaptics(
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const ClampingScrollPhysics(),
+          cacheExtent: 240,
+          addAutomaticKeepAlives: false,
+          itemCount: items.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          itemBuilder: (context, index) {
+            final category = items[index];
+            return _CategoryTile(
+              category: category,
+              count: countFor(category?.slug),
+              onTap: () => onTap(category?.slug),
+            );
+          },
+        ),
       ),
     );
   }
@@ -65,6 +71,7 @@ class _CategoryTile extends StatelessWidget {
     final palette = _paletteFor(slug);
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: SizedBox(
         width: 152,

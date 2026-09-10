@@ -10,6 +10,8 @@ abstract final class AppSupabase {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2dnhxc3dycnB5YXVsZHhteW96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3OTMyMDMsImV4cCI6MjEwNDM2OTIwM30.8v2jMC8oWCQj1DWz2chjeO4K4RXDB_KjWRSD9Q8Tt7o',
   );
 
+  static const authRedirectUrl = 'com.ahmadjamil.tum://login-callback';
+
   static bool get isConfigured => anonKey.isNotEmpty;
 
   static Future<void> initialize() async {

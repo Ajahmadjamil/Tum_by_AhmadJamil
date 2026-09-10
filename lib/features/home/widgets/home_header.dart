@@ -1,17 +1,40 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/haptics/app_haptics.dart';
 import '../../../core/locale/locale_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 
-class HomeHeader extends StatelessWidget {
+class HomeHeader extends StatefulWidget {
   const HomeHeader({
     super.key,
     required this.onSearchChanged,
   });
 
   final ValueChanged<String> onSearchChanged;
+
+  @override
+  State<HomeHeader> createState() => _HomeHeaderState();
+}
+
+class _HomeHeaderState extends State<HomeHeader> {
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 80), () {
+      widget.onSearchChanged(value);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +60,7 @@ class HomeHeader extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
-                      onChanged: onSearchChanged,
+                      onChanged: _onChanged,
                       textAlign: locale.isUrdu ? TextAlign.right : TextAlign.left,
                       style: locale.isUrdu
                           ? AppTextStyles.nastaliq(
@@ -68,7 +91,8 @@ class HomeHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () {},
+            enableFeedback: false,
+            onPressed: () => AppHaptics.selection(),
             icon: Icon(Icons.notifications_none, color: colors.text),
           ),
         ],

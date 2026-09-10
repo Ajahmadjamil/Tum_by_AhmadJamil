@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
+import '../../core/haptics/app_haptics.dart';
 import '../../core/locale/locale_controller.dart';
+import '../../core/navigation/snappy_route.dart';
+import '../../core/shared/widgets/catalog_placeholders.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../poetry/controller.dart';
@@ -14,6 +18,7 @@ import 'widgets/book_carousel.dart';
 import 'widgets/category_tiles.dart';
 import 'widgets/featured_banner.dart';
 import 'widgets/home_header.dart';
+import 'widgets/kalam_poem_list.dart';
 import 'widgets/section_header.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -25,127 +30,159 @@ class HomeScreen extends StatelessWidget {
     final catalog = context.watch<CatalogController>();
     final colors = context.colors;
     final strings = locale.strings;
+    final showSkeleton = catalog.showSkeleton;
     final poet = catalog.poets.isEmpty ? null : catalog.poets.first;
+    final banners = catalog.banners.isEmpty && showSkeleton
+        ? [BannerRow.placeholder()]
+        : catalog.banners;
+    final quote =
+        catalog.quote ?? (showSkeleton ? QuoteRow.placeholder() : null);
+    final categories = catalog.categories.isEmpty && showSkeleton
+        ? CatalogPlaceholders.categories
+        : catalog.categories;
 
     return SafeArea(
       bottom: false,
-      child: RefreshIndicator(
-        color: colors.accent,
-        onRefresh: catalog.load,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: [
-            HomeHeader(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: HomeHeader(
               onSearchChanged: catalog.setSearchQuery,
             ),
-            const SizedBox(height: 18),
-            if (catalog.loading && catalog.books.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 80),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else ...[
-              if (catalog.error != null && catalog.books.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(
-                    locale.isUrdu
-                        ? 'ڈیٹا لوڈ نہیں ہوا۔ کلید لگائیں یا دوبارہ کوشش کریں۔'
-                        : 'Could not load poetry. Add the Supabase key and retry.',
-                    style: AppTextStyles.label(
-                      locale.isUrdu,
-                      color: colors.textMuted,
-                    ),
-                  ),
-                ),
-              FeaturedBanner(
-                banners: catalog.banners,
-                onTap: (banner) {
-                  final poems = _queueForPoetry(catalog, banner.poetryId);
-                  openReader(context, poems: poems);
-                },
-              ),
-              const SizedBox(height: 22),
-              if (catalog.isSinglePoetKalam)
-                _SinglePoetKalamSection(catalog: catalog)
-              else ...[
-                SectionHeader(
-                  title: poet == null
-                      ? strings.appName
-                      : strings.kalamOf(
-                          locale.pick(
-                            urdu: poet.nameUrdu,
-                            english: poet.nameEnglish ?? '',
+          ),
+          Expanded(
+            child: catalog.searchQuery.trim().isNotEmpty
+                ? KalamPoemList(
+                    poems: catalog.visibleCatalog,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  )
+                : RefreshIndicator(
+                    color: colors.accent,
+                    onRefresh: catalog.refreshFromNetwork,
+                    child: ScrollHaptics(
+                      child: ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+                      physics: const AlwaysScrollableScrollPhysics(
+                        parent: ClampingScrollPhysics(),
+                      ),
+                      cacheExtent: 420,
+                      addAutomaticKeepAlives: false,
+                      children: [
+                        if (catalog.error != null &&
+                            catalog.catalog.isEmpty &&
+                            !showSkeleton)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Text(
+                              locale.isUrdu
+                                  ? 'ڈیٹا لوڈ نہیں ہوا۔ کلید لگائیں یا دوبارہ کوشش کریں۔'
+                                  : 'Could not load poetry. Add the Supabase key and retry.',
+                              style: AppTextStyles.label(
+                                locale.isUrdu,
+                                color: colors.textMuted,
+                              ),
+                            ),
+                          ),
+                        IgnorePointer(
+                          ignoring: showSkeleton,
+                          child: Skeletonizer(
+                            enabled: showSkeleton,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                FeaturedBanner(
+                                  banners: banners,
+                                  onTap: (banner) {
+                                    _openPoetry(
+                                      context,
+                                      catalog,
+                                      banner.poetryId,
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 22),
+                                if (showSkeleton || catalog.isSinglePoetKalam)
+                                  _SinglePoetKalamSection(
+                                    catalog: catalog,
+                                    categories: categories,
+                                  )
+                                else ...[
+                                  SectionHeader(
+                                    title: poet == null
+                                        ? strings.appName
+                                        : strings.kalamOf(
+                                            locale.pick(
+                                              urdu: poet.nameUrdu,
+                                              english: poet.nameEnglish ?? '',
+                                            ),
+                                          ),
+                                    actionLabel: strings.seeMore,
+                                    onAction: () {
+                                      AppHaptics.heavy();
+                                      Navigator.of(context).push(
+                                        snappyRoute(const CollectionView()),
+                                      );
+                                    },
+                                  ),
+                                  BookCarousel(
+                                    books: catalog.books,
+                                    onTapBook: (book) {
+                                      final poems =
+                                          catalog.poemsForBook(book.id);
+                                      openReader(context, poems: poems);
+                                    },
+                                  ),
+                                ],
+                                const SizedBox(height: 22),
+                                if (quote != null) ...[
+                                  Text(
+                                    formatQuoteStamp(quote.displayDate),
+                                    style: AppTextStyles.ui(
+                                      fontSize: 11,
+                                      color: colors.textMuted,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SectionHeader(title: strings.aajKaShair),
+                                  AajKaShairCard(
+                                    quote: quote,
+                                    onTap: () {
+                                      _openPoetry(
+                                        context,
+                                        catalog,
+                                        quote.poetryId,
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
                         ),
-                  actionLabel: strings.seeMore,
-                  onAction: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const CollectionView()),
-                    );
-                  },
-                ),
-                BookCarousel(
-                  books: catalog.books,
-                  onTapBook: (book) {
-                    final poems = catalog.poemsForBook(book.id);
-                    openReader(context, poems: poems);
-                  },
-                ),
-              ],
-              const SizedBox(height: 22),
-              if (catalog.quote != null) ...[
-                Text(
-                  formatQuoteStamp(catalog.quote!.displayDate),
-                  style: AppTextStyles.ui(
-                    fontSize: 11,
-                    color: colors.textMuted,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SectionHeader(title: strings.aajKaShair),
-                AajKaShairCard(
-                  quote: catalog.quote!,
-                  onTap: () {
-                    final poems = _queueForPoetry(
-                      catalog,
-                      catalog.quote!.poetryId,
-                    );
-                    openReader(context, poems: poems);
-                  },
-                ),
-              ],
-              if (catalog.searchQuery.trim().isNotEmpty) ...[
-                const SizedBox(height: 22),
-                ...catalog.visibleCatalog.map(
-                  (poem) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      locale.pick(
-                        urdu: poem.titleUrdu,
-                        english: poem.titleEnglish ?? '',
-                      ),
-                      textDirection: TextDirection.rtl,
-                      style: AppTextStyles.nastaliq(
-                        fontSize: 16,
-                        height: 1.8,
-                        color: colors.text,
-                      ),
+                      ],
                     ),
-                    onTap: () => openReader(
-                      context,
-                      poems: catalog.visibleCatalog,
-                      initialIndex: catalog.visibleCatalog.indexOf(poem),
                     ),
                   ),
-                ),
-              ],
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+void _openPoetry(
+  BuildContext context,
+  CatalogController catalog,
+  String? poetryId,
+) {
+  final poems = _queueForPoetry(catalog, poetryId);
+  var index = 0;
+  if (poetryId != null) {
+    final found = poems.indexWhere((poem) => poem.id == poetryId);
+    if (found >= 0) index = found;
+  }
+  openReader(context, poems: poems, initialIndex: index);
 }
 
 List<PoetryCatalogRow> _queueForPoetry(
@@ -163,21 +200,27 @@ List<PoetryCatalogRow> _queueForPoetry(
 }
 
 class _SinglePoetKalamSection extends StatelessWidget {
-  const _SinglePoetKalamSection({required this.catalog});
+  const _SinglePoetKalamSection({
+    required this.catalog,
+    required this.categories,
+  });
 
   final CatalogController catalog;
+  final List<CategoryRow> categories;
 
   @override
   Widget build(BuildContext context) {
     final locale = context.watch<LocaleController>();
-    final poet = catalog.poets.first;
+    final poet = catalog.poets.isEmpty ? null : catalog.poets.first;
     final book = catalog.books.isEmpty ? null : catalog.books.first;
-    final poetName = locale.pick(
-      urdu: poet.nameUrdu,
-      english: poet.nameEnglish ?? '',
-    );
+    final poetName = poet == null
+        ? 'احمد جمیل'
+        : locale.pick(
+            urdu: poet.nameUrdu,
+            english: poet.nameEnglish ?? '',
+          );
     final bookName = book == null
-        ? ''
+        ? 'تم'
         : locale.pick(urdu: book.titleUrdu, english: book.titleEnglish ?? '');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -187,14 +230,12 @@ class _SinglePoetKalamSection extends StatelessWidget {
           actionLabel: bookName.isEmpty ? null : bookName,
         ),
         CategoryTiles(
-          categories: catalog.categories,
+          categories: categories,
           countFor: (slug) => catalog.countForCategory(slug),
           onTap: (slug) {
-            catalog.selectCategory(slug);
+            AppHaptics.heavy();
             Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const CategoryBrowseView(),
-              ),
+              snappyRoute(CategoryBrowseView(categorySlug: slug)),
             );
           },
         ),

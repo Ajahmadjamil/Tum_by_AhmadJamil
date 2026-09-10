@@ -21,6 +21,7 @@ class AajKaShairCard extends StatelessWidget {
     final locale = context.watch<LocaleController>();
     final colors = context.colors;
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(22),

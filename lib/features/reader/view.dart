@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/haptics/app_haptics.dart';
 import '../../core/locale/locale_controller.dart';
+import '../../core/navigation/snappy_route.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../favorites/controller.dart';
@@ -14,10 +16,9 @@ void openReader(
   int initialIndex = 0,
 }) {
   if (poems.isEmpty) return;
+  AppHaptics.heavy();
   Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => ReaderScreen(poems: poems, initialIndex: initialIndex),
-    ),
+    snappyRoute(ReaderScreen(poems: poems, initialIndex: initialIndex)),
   );
 }
 
@@ -50,7 +51,6 @@ class _ReaderBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = context.watch<LocaleController>();
     final reader = context.watch<ReaderController>();
-    final favorites = context.watch<FavoritesController>();
     final colors = context.colors;
     final poem = reader.current;
     final strings = locale.strings;
@@ -72,7 +72,9 @@ class _ReaderBody extends StatelessWidget {
       urdu: poem.categoryNameUrdu,
       english: poem.categoryNameEnglish,
     );
-    final favorited = favorites.isFavorite(poem.id);
+    final favorited = context.select<FavoritesController, bool>(
+      (favorites) => favorites.isFavorite(poem.id),
+    );
     final body = reader.body;
 
     return Scaffold(
@@ -87,6 +89,7 @@ class _ReaderBody extends StatelessWidget {
                 child: Row(
                   children: [
                     IconButton(
+                      enableFeedback: false,
                       onPressed: () => Navigator.of(context).pop(),
                       icon: const Icon(Icons.chevron_left, size: 28),
                     ),
@@ -105,7 +108,11 @@ class _ReaderBody extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      onPressed: () => favorites.toggle(poem.id),
+                      enableFeedback: false,
+                      onPressed: () {
+                        AppHaptics.medium();
+                        context.read<FavoritesController>().toggle(poem.id);
+                      },
                       icon: Icon(
                         favorited ? Icons.favorite : Icons.favorite_border,
                         color: favorited ? Colors.redAccent : colors.text,
@@ -147,8 +154,12 @@ class _ReaderBody extends StatelessWidget {
                         ),
                       ),
                     )
-                  : ListView(
+                  : ScrollHaptics(
+                      child: ListView(
                       padding: const EdgeInsets.fromLTRB(28, 36, 28, 24),
+                      physics: const ClampingScrollPhysics(),
+                      cacheExtent: 400,
+                      addAutomaticKeepAlives: false,
                       children: [
                         SizedBox(
                           width: double.infinity,
@@ -180,6 +191,7 @@ class _ReaderBody extends StatelessWidget {
                         ),
                       ],
                     ),
+                  ),
             ),
             _ReaderToolbar(poet: poet, book: book),
           ],
@@ -210,7 +222,13 @@ class _ReaderToolbar extends StatelessWidget {
             child: Row(
               children: [
                 IconButton(
-                  onPressed: reader.hasPrevious ? reader.previous : null,
+                  enableFeedback: false,
+                  onPressed: reader.hasPrevious
+                      ? () {
+                          AppHaptics.medium();
+                          reader.previous();
+                        }
+                      : null,
                   icon: const Icon(Icons.chevron_left),
                 ),
                 Expanded(
@@ -221,13 +239,22 @@ class _ReaderToolbar extends StatelessWidget {
                         _AlignButton(
                           align: align,
                           selected: reader.align == align,
-                          onTap: () => reader.setAlign(align),
+                          onTap: () {
+                            AppHaptics.selection();
+                            reader.setAlign(align);
+                          },
                         ),
                     ],
                   ),
                 ),
                 IconButton(
-                  onPressed: reader.hasNext ? reader.next : null,
+                  enableFeedback: false,
+                  onPressed: reader.hasNext
+                      ? () {
+                          AppHaptics.medium();
+                          reader.next();
+                        }
+                      : null,
                   icon: const Icon(Icons.chevron_right),
                 ),
               ],
@@ -244,7 +271,10 @@ class _ReaderToolbar extends StatelessWidget {
                   _SizeButton(
                     size: size,
                     selected: reader.fontSize == size,
-                    onTap: () => reader.setFontSize(size),
+                    onTap: () {
+                      AppHaptics.selection();
+                      reader.setFontSize(size);
+                    },
                   ),
                 const Spacer(),
                 IconButton(
@@ -289,6 +319,7 @@ class _ReaderToolbar extends StatelessWidget {
               ? null
               : (value) {
                   final next = (value * (reader.poems.length - 1)).round();
+                  if (next != reader.index) AppHaptics.selection();
                   reader.goTo(next);
                 },
         ),

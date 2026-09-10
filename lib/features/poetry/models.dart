@@ -19,6 +19,13 @@ class CategoryRow {
       nameEnglish: row['name_english'] as String,
     );
   }
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'slug': slug,
+        'name_urdu': nameUrdu,
+        'name_english': nameEnglish,
+      };
 }
 
 class PoetRow {
@@ -45,6 +52,14 @@ class PoetRow {
       avatarUrl: row['avatar_url'] as String?,
     );
   }
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'slug': slug,
+        'name_urdu': nameUrdu,
+        'name_english': nameEnglish,
+        'avatar_url': avatarUrl,
+      };
 }
 
 class BookRow {
@@ -88,6 +103,20 @@ class BookRow {
       poetNameEnglish: poetMap?['name_english'] as String?,
     );
   }
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'poet_id': poetId,
+        'slug': slug,
+        'title_urdu': titleUrdu,
+        'title_english': titleEnglish,
+        'cover_image_url': coverImageUrl,
+        'release_year': releaseYear,
+        'poets': {
+          'name_urdu': poetNameUrdu,
+          'name_english': poetNameEnglish,
+        },
+      };
 }
 
 class PoetryCatalogRow {
@@ -129,6 +158,16 @@ class PoetryCatalogRow {
   final String? teaserLine1;
   final String? teaserLine2;
 
+  String? get firstBodyLine {
+    final teaser = teaserLine1?.trim();
+    if (teaser != null && teaser.isNotEmpty) return teaser;
+    for (final line in body.split('\n')) {
+      final trimmed = line.trim();
+      if (trimmed.isNotEmpty) return trimmed;
+    }
+    return null;
+  }
+
   factory PoetryCatalogRow.fromMap(Map<String, dynamic> row) {
     return PoetryCatalogRow(
       id: row['id'] as String,
@@ -148,6 +187,48 @@ class PoetryCatalogRow {
       body: row['body'] as String? ?? '',
       teaserLine1: row['teaser_line_1'] as String?,
       teaserLine2: row['teaser_line_2'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'slug': slug,
+        'title_urdu': titleUrdu,
+        'title_english': titleEnglish,
+        'category_slug': categorySlug,
+        'category_name_urdu': categoryNameUrdu,
+        'category_name_english': categoryNameEnglish,
+        'poet_id': poetId,
+        'poet_name_urdu': poetNameUrdu,
+        'poet_name_english': poetNameEnglish,
+        'book_id': bookId,
+        'book_title_urdu': bookTitleUrdu,
+        'book_title_english': bookTitleEnglish,
+        'sort_order': sortOrder,
+        'body': body,
+        'teaser_line_1': teaserLine1,
+        'teaser_line_2': teaserLine2,
+      };
+
+  factory PoetryCatalogRow.placeholder(int index) {
+    return PoetryCatalogRow(
+      id: 'placeholder-$index',
+      slug: 'placeholder-$index',
+      titleUrdu: 'عنوان کلام',
+      titleEnglish: null,
+      categorySlug: 'ghazal',
+      categoryNameUrdu: 'غزل',
+      categoryNameEnglish: 'Ghazal',
+      poetId: 'placeholder-poet',
+      poetNameUrdu: 'احمد جمیل',
+      poetNameEnglish: 'Ahmad Jamil',
+      bookId: 'placeholder-book',
+      bookTitleUrdu: 'تم',
+      bookTitleEnglish: 'Tum',
+      sortOrder: index,
+      body: 'یہ پہلی سطر ہے',
+      teaserLine1: 'یہ پہلی سطر ہے',
+      teaserLine2: null,
     );
   }
 }
@@ -192,6 +273,36 @@ class BannerRow {
       poetNameEnglish: row['poet_name_english'] as String?,
       bookTitleUrdu: row['book_title_urdu'] as String?,
       bookTitleEnglish: row['book_title_english'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'title': title,
+        'image_url': imageUrl,
+        'teaser_line_1': teaserLine1,
+        'teaser_line_2': teaserLine2,
+        'poetry_id': poetryId,
+        'title_urdu': titleUrdu,
+        'poet_name_urdu': poetNameUrdu,
+        'poet_name_english': poetNameEnglish,
+        'book_title_urdu': bookTitleUrdu,
+        'book_title_english': bookTitleEnglish,
+      };
+
+  factory BannerRow.placeholder() {
+    return const BannerRow(
+      id: 'placeholder-banner',
+      title: 'تم',
+      imageUrl: null,
+      teaserLine1: 'پہلی سطرِ شعر',
+      teaserLine2: 'دوسری سطرِ شعر',
+      poetryId: null,
+      titleUrdu: 'تم',
+      poetNameUrdu: 'احمد جمیل',
+      poetNameEnglish: 'Ahmad Jamil',
+      bookTitleUrdu: 'تم',
+      bookTitleEnglish: 'Tum',
     );
   }
 }
@@ -240,6 +351,30 @@ class QuoteRow {
       bookTitleUrdu: poem.bookTitleUrdu,
       bookTitleEnglish: poem.bookTitleEnglish,
       poetryId: poem.id,
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'display_date': displayDate,
+        'teaser_line_1': teaserLine1,
+        'teaser_line_2': teaserLine2,
+        'poet_name_urdu': poetNameUrdu,
+        'poet_name_english': poetNameEnglish,
+        'book_title_urdu': bookTitleUrdu,
+        'book_title_english': bookTitleEnglish,
+        'poetry_id': poetryId,
+      };
+
+  factory QuoteRow.placeholder() {
+    return const QuoteRow(
+      displayDate: '2026-01-01',
+      teaserLine1: 'آج کا شعر یہاں آئے گا',
+      teaserLine2: 'دوسری سطر یہاں آئے گی',
+      poetNameUrdu: 'احمد جمیل',
+      poetNameEnglish: 'Ahmad Jamil',
+      bookTitleUrdu: 'تم',
+      bookTitleEnglish: 'Tum',
+      poetryId: 'placeholder-quote',
     );
   }
 }

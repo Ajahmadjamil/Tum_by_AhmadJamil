@@ -2,7 +2,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SessionStore {
   static const _localeKey = 'app_locale';
-  static const _favoritesKey = 'favorite_poetry_ids';
   static const _themeKey = 'app_is_dark';
   static const _readerAlignKey = 'reader_body_align';
   static const _readerFontKey = 'reader_font_size';
@@ -25,16 +24,6 @@ class SessionStore {
   Future<String> readLocaleCode() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_localeKey) ?? 'ur';
-  }
-
-  Future<List<String>> readFavoriteIds() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getStringList(_favoritesKey) ?? const [];
-  }
-
-  Future<void> saveFavoriteIds(List<String> ids) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_favoritesKey, ids);
   }
 
   Future<void> saveReaderAlign(String align) async {

@@ -33,6 +33,19 @@ class AppStrings {
       urdu ? 'کیا آپ ایپ بند کرنا چاہتے ہیں؟' : 'Do you want to close the app?';
   String get exit => urdu ? 'خروج' : 'Exit';
   String get cancel => urdu ? 'منسوخ' : 'Cancel';
+  String get guestName => urdu ? 'مہمان' : 'Guest';
+  String get guestHint => urdu
+      ? 'ایپ بغیر سائن ان کے چلتی ہے۔ گوگل سے سائن ان کریں تو پسندیدہ آپ کے پروفائل سے جڑ جائیں گے۔'
+      : 'The app works without an account. Sign in with Google to save favorites to your profile.';
+  String get signedInHint => urdu
+      ? 'پسندیدہ آپ کے پروفائل سے منسلک ہیں۔ آف لائن میں وہ اس فون پر محفوظ رہتے ہیں۔'
+      : 'Favorites are linked to your profile, and still work offline on this device.';
+  String get signInWithGoogle =>
+      urdu ? 'گوگل سے سائن ان' : 'Sign in with Google';
+  String get signOut => urdu ? 'سائن آؤٹ' : 'Sign out';
+  String get signInFailed =>
+      urdu ? 'سائن ان نہیں ہو سکا' : 'Could not sign in';
+  String get signInCanceled => urdu ? 'سائن ان منسوخ ہوا' : 'Sign in canceled';
 
   String poemCount(int count) {
     return urdu ? '$count کلام' : '$count pieces';

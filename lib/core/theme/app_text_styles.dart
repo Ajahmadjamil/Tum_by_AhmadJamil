@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 abstract final class AppTextStyles {
+  static final TextStyle _nastaliq = GoogleFonts.notoNastaliqUrdu();
+  static final TextStyle _outfit = GoogleFonts.outfit();
+
   static TextStyle nastaliq({
     double fontSize = 18,
     Color? color,
     double height = 2.2,
     FontWeight fontWeight = FontWeight.w400,
   }) {
-    return GoogleFonts.notoNastaliqUrdu(
+    return _nastaliq.copyWith(
       fontSize: fontSize,
       color: color,
       height: height,
@@ -22,7 +25,7 @@ abstract final class AppTextStyles {
     FontWeight fontWeight = FontWeight.w500,
     double height = 1.3,
   }) {
-    return GoogleFonts.outfit(
+    return _outfit.copyWith(
       fontSize: fontSize,
       color: color,
       fontWeight: fontWeight,
