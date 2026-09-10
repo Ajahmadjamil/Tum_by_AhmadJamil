@@ -5,9 +5,11 @@ import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../core/auth/auth_controller.dart';
 import '../../core/locale/locale_controller.dart';
+import '../../core/navigation/snappy_route.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/theme_controller.dart';
+import '../poetry/trash_view.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -62,6 +64,30 @@ class ProfileScreen extends StatelessWidget {
               style: AppTextStyles.ui(fontSize: 13, color: colors.textMuted),
             ),
           ],
+          if (signedIn &&
+              (auth.hasEditPermission ||
+                  (profile?.editorAccess.poetId?.isNotEmpty ?? false))) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (auth.hasEditPermission)
+                  _EditorBadge(
+                    label: auth.isSuperadmin
+                        ? strings.superadminBadge
+                        : strings.editorBadge,
+                  ),
+                if (profile?.editorAccess.poetId?.isNotEmpty ?? false)
+                  _EditorBadge(
+                    label: auth.isCatalogPublic
+                        ? strings.catalogPublicBadge
+                        : strings.catalogHiddenBadge,
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
           Text(
             signedIn ? strings.signedInHint : strings.guestHint,
@@ -73,6 +99,29 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
+          if (signedIn && auth.hasEditPermission) ...[
+            _SettingCard(
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.delete_outline, color: colors.text),
+                title: Text(
+                  strings.trash,
+                  style: AppTextStyles.heading(
+                    locale.isUrdu,
+                    fontSize: 16,
+                    color: colors.text,
+                  ),
+                ),
+                trailing: Icon(Icons.chevron_right, color: colors.textMuted),
+                onTap: () {
+                  Navigator.of(context).push(
+                    snappyRoute(const PoetryTrashView()),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           if (signedIn)
             _SettingCard(
               child: ListTile(
@@ -194,6 +243,7 @@ class ProfileScreen extends StatelessWidget {
       );
     }
   }
+
 }
 
 class _GoogleSignInButton extends StatelessWidget {
@@ -287,6 +337,32 @@ class _GoogleMark extends StatelessWidget {
           fontWeight: FontWeight.w800,
           color: Color(0xFF4285F4),
           height: 1,
+        ),
+      ),
+    );
+  }
+}
+
+class _EditorBadge extends StatelessWidget {
+  const _EditorBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: colors.accentSoft,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.ui(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: colors.accent,
         ),
       ),
     );

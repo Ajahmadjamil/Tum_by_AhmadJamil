@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/alerts/show_dialogs.dart';
+import '../../core/auth/auth_controller.dart';
 import '../../core/haptics/app_haptics.dart';
 import '../../core/locale/locale_controller.dart';
 import '../../core/theme/app_colors.dart';
@@ -22,6 +24,32 @@ class ShellScreen extends StatefulWidget {
 class _ShellScreenState extends State<ShellScreen> {
   int _index = 0;
   final Set<int> _visited = {0};
+  AuthController? _auth;
+  bool _editToastShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _auth = context.read<AuthController>();
+    _auth!.addListener(_onAuthChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onAuthChanged());
+  }
+
+  void _onAuthChanged() {
+    if (!mounted) return;
+    final auth = _auth;
+    if (auth == null) return;
+    if (!auth.isSignedIn) {
+      _editToastShown = false;
+      return;
+    }
+    if (_editToastShown || !auth.hasEditPermission) return;
+    _editToastShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ShowDialogs.editorAccess(context);
+    });
+  }
 
   Future<void> _onBack() async {
     if (_index != 0) {
@@ -72,6 +100,12 @@ class _ShellScreenState extends State<ShellScreen> {
     if (shouldExit == true) {
       SystemNavigator.pop();
     }
+  }
+
+  @override
+  void dispose() {
+    _auth?.removeListener(_onAuthChanged);
+    super.dispose();
   }
 
   Widget _tab(int index, Widget child) {

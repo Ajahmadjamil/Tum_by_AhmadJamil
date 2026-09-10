@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 abstract final class AppTextStyles {
   static final TextStyle _nastaliq = GoogleFonts.notoNastaliqUrdu();
+  static final TextStyle _naskh = GoogleFonts.notoNaskhArabic();
   static final TextStyle _outfit = GoogleFonts.outfit();
 
   static TextStyle nastaliq({
@@ -16,6 +17,23 @@ abstract final class AppTextStyles {
       color: color,
       height: height,
       fontWeight: fontWeight,
+      locale: const Locale('ur'),
+    );
+  }
+
+  /// Naskh for typing. Nastaliq ligatures make the caret skip letters.
+  static TextStyle urduEditor({
+    double fontSize = 22,
+    Color? color,
+    double height = 1.9,
+    FontWeight fontWeight = FontWeight.w400,
+  }) {
+    return _naskh.copyWith(
+      fontSize: fontSize,
+      color: color,
+      height: height,
+      fontWeight: fontWeight,
+      locale: const Locale('ur'),
     );
   }
 

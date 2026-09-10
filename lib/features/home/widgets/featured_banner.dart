@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/haptics/app_haptics.dart';
 import '../../../core/locale/locale_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../poetry/models.dart';
+import 'auto_page_carousel.dart';
 
-class FeaturedBanner extends StatefulWidget {
+class FeaturedBanner extends StatelessWidget {
   const FeaturedBanner({
     super.key,
     required this.banners,
@@ -18,72 +18,17 @@ class FeaturedBanner extends StatefulWidget {
   final ValueChanged<BannerRow> onTap;
 
   @override
-  State<FeaturedBanner> createState() => _FeaturedBannerState();
-}
-
-class _FeaturedBannerState extends State<FeaturedBanner> {
-  PageController? _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _syncController();
-  }
-
-  @override
-  void didUpdateWidget(covariant FeaturedBanner oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.banners.length < 2 && widget.banners.length >= 2) {
-      _syncController();
-    } else if (oldWidget.banners.length >= 2 && widget.banners.length < 2) {
-      _controller?.dispose();
-      _controller = null;
-    }
-  }
-
-  void _syncController() {
-    if (widget.banners.length < 2) return;
-    _controller ??= PageController(viewportFraction: 0.94);
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (widget.banners.isEmpty) return const SizedBox.shrink();
-
-    if (widget.banners.length == 1) {
-      return SizedBox(
-        height: 188,
-        child: _BannerCard(
-          banner: widget.banners.first,
-          onTap: () => widget.onTap(widget.banners.first),
-        ),
-      );
-    }
-
-    return SizedBox(
-      height: 188,
-      child: ScrollHaptics(
-        child: PageView.builder(
-          itemCount: widget.banners.length,
-          controller: _controller,
-          itemBuilder: (context, index) {
-            final banner = widget.banners[index];
-            return Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: _BannerCard(
-                banner: banner,
-                onTap: () => widget.onTap(banner),
-              ),
-            );
-          },
-        ),
-      ),
+    if (banners.isEmpty) return const SizedBox.shrink();
+    return AutoPageCarousel(
+      itemCount: banners.length,
+      itemBuilder: (context, index) {
+        final banner = banners[index];
+        return _BannerCard(
+          banner: banner,
+          onTap: () => onTap(banner),
+        );
+      },
     );
   }
 }

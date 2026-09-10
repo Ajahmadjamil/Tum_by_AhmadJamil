@@ -236,6 +236,15 @@ _TilePalette _paletteFor(String slug) {
           end: Alignment.bottomRight,
         ),
       );
+    case 'mashoor':
+      return const _TilePalette(
+        glow: Color(0xFFE0B44A),
+        gradient: LinearGradient(
+          colors: [Color(0xFF3A2A0C), Color(0xFF120E08), Color(0xFF2A220C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      );
     default:
       return const _TilePalette(
         glow: Color(0xFFE0B44A),

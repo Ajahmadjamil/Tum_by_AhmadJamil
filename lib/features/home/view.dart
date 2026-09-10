@@ -19,6 +19,7 @@ import 'widgets/category_tiles.dart';
 import 'widgets/featured_banner.dart';
 import 'widgets/home_header.dart';
 import 'widgets/kalam_poem_list.dart';
+import 'widgets/popular_banner.dart';
 import 'widgets/section_header.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -39,7 +40,11 @@ class HomeScreen extends StatelessWidget {
         catalog.quote ?? (showSkeleton ? QuoteRow.placeholder() : null);
     final categories = catalog.categories.isEmpty && showSkeleton
         ? CatalogPlaceholders.categories
-        : catalog.categories;
+        : catalog.visibleCategories;
+    final popular = catalog.poemsForCategory(CategoryRow.mashoorSlug);
+    final popularCards = popular.isEmpty && showSkeleton
+        ? CatalogPlaceholders.poems(count: 2)
+        : popular;
 
     return SafeArea(
       bottom: false,
@@ -152,6 +157,42 @@ class HomeScreen extends StatelessWidget {
                                         context,
                                         catalog,
                                         quote.poetryId,
+                                      );
+                                    },
+                                  ),
+                                ],
+                                if (popularCards.isNotEmpty) ...[
+                                  const SizedBox(height: 22),
+                                  SectionHeader(
+                                    title: locale.pick(
+                                      urdu: CategoryRow.mashoor.nameUrdu,
+                                      english: CategoryRow.mashoor.nameEnglish,
+                                    ),
+                                    actionLabel: strings.seeMore,
+                                    onAction: () {
+                                      AppHaptics.heavy();
+                                      Navigator.of(context).push(
+                                        snappyRoute(
+                                          const CategoryBrowseView(
+                                            categorySlug: CategoryRow.mashoorSlug,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  PopularBanner(
+                                    poems: popularCards,
+                                    onTap: (poem) {
+                                      final queue = popular.isNotEmpty
+                                          ? popular
+                                          : popularCards;
+                                      final index = queue.indexWhere(
+                                        (item) => item.id == poem.id,
+                                      );
+                                      openReader(
+                                        context,
+                                        poems: queue,
+                                        initialIndex: index < 0 ? 0 : index,
                                       );
                                     },
                                   ),

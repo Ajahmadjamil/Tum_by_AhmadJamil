@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../supabase/app_supabase.dart';
+import 'editor_access.dart';
 import 'google_auth_config.dart';
 import 'user_profile.dart';
 
@@ -22,6 +23,18 @@ class AuthController extends ChangeNotifier {
   bool get isSignedIn => _user != null;
   bool get isBusy => _busy;
   String? get userId => _user?.id;
+
+  EditorAccess get editorAccess =>
+      _profile?.editorAccess ?? EditorAccess.none;
+
+  bool get isSuperadmin => editorAccess.isSuperadmin;
+  bool get hasEditPermission => editorAccess.hasEditPermission;
+  bool get isCatalogPublic => _profile?.isPublic ?? false;
+
+  bool canEditPoet(String? poetId) => editorAccess.canEditPoet(poetId);
+
+  bool canEditBook({required String poetId}) =>
+      editorAccess.canEditBook(poetId: poetId);
 
   Future<void> load() async {
     if (!AppSupabase.isConfigured) return;
@@ -66,6 +79,7 @@ class AuthController extends ChangeNotifier {
     _setBusy(true);
     try {
       await _nativeGoogleSignIn();
+      await _syncSession();
     } on GoogleSignInException catch (error) {
       if (error.code == GoogleSignInExceptionCode.canceled) return;
       rethrow;
@@ -126,24 +140,44 @@ class AuthController extends ChangeNotifier {
     _googleReady = true;
   }
 
+  Future<void> _syncSession() async {
+    _user = AppSupabase.client.auth.currentUser;
+    if (_user != null) {
+      await _hydrateProfile(_user!);
+    } else {
+      _profile = null;
+    }
+    notifyListeners();
+  }
+
   Future<void> _hydrateProfile(User user) async {
     final fallback = _profileFromUser(user);
     _profile = fallback;
     try {
-      await AppSupabase.client.from('profiles').upsert({
-        'id': user.id,
-        'display_name': fallback.displayName,
-        'avatar_url': fallback.avatarUrl,
-      });
+      try {
+        await AppSupabase.client.rpc(
+          'sync_own_profile',
+          params: {
+            'p_display_name': fallback.displayName,
+            'p_avatar_url': fallback.avatarUrl,
+          },
+        );
+      } catch (error) {
+        debugPrint('Profile name sync failed: $error');
+      }
+
       final row = await AppSupabase.client
           .from('profiles')
-          .select('id, display_name, avatar_url')
+          .select(
+            'id, display_name, avatar_url, is_superadmin, can_edit, poet_id, is_public',
+          )
           .eq('id', user.id)
           .maybeSingle();
       if (row != null) {
         _profile = UserProfile.fromRow(row, email: user.email);
       }
-    } catch (_) {
+    } catch (error) {
+      debugPrint('Failed to load editor permissions: $error');
       _profile = fallback;
     }
   }

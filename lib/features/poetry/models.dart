@@ -1,4 +1,13 @@
 class CategoryRow {
+  static const mashoorSlug = 'mashoor';
+
+  static const mashoor = CategoryRow(
+    id: mashoorSlug,
+    slug: mashoorSlug,
+    nameUrdu: 'مشہور',
+    nameEnglish: 'Popular',
+  );
+
   const CategoryRow({
     required this.id,
     required this.slug,
@@ -10,6 +19,8 @@ class CategoryRow {
   final String slug;
   final String nameUrdu;
   final String nameEnglish;
+
+  bool get isMashoor => slug == mashoorSlug;
 
   factory CategoryRow.fromMap(Map<String, dynamic> row) {
     return CategoryRow(
@@ -138,6 +149,8 @@ class PoetryCatalogRow {
     required this.body,
     required this.teaserLine1,
     required this.teaserLine2,
+    this.isPopular = false,
+    this.popularSort,
   });
 
   final String id;
@@ -157,6 +170,10 @@ class PoetryCatalogRow {
   final String body;
   final String? teaserLine1;
   final String? teaserLine2;
+  final bool isPopular;
+  final int? popularSort;
+
+  bool get isDraft => id.isEmpty;
 
   String? get firstBodyLine {
     final teaser = teaserLine1?.trim();
@@ -166,6 +183,70 @@ class PoetryCatalogRow {
       if (trimmed.isNotEmpty) return trimmed;
     }
     return null;
+  }
+
+  factory PoetryCatalogRow.compose({
+    required CategoryRow category,
+    required BookRow book,
+  }) {
+    return PoetryCatalogRow(
+      id: '',
+      slug: '',
+      titleUrdu: '',
+      titleEnglish: null,
+      categorySlug: category.slug,
+      categoryNameUrdu: category.nameUrdu,
+      categoryNameEnglish: category.nameEnglish,
+      poetId: book.poetId,
+      poetNameUrdu: book.poetNameUrdu ?? '',
+      poetNameEnglish: book.poetNameEnglish,
+      bookId: book.id,
+      bookTitleUrdu: book.titleUrdu,
+      bookTitleEnglish: book.titleEnglish,
+      sortOrder: 0,
+      body: '',
+      teaserLine1: null,
+      teaserLine2: null,
+    );
+  }
+
+  PoetryCatalogRow copyWith({
+    String? id,
+    String? slug,
+    String? titleUrdu,
+    String? body,
+    int? sortOrder,
+    bool? isPopular,
+    int? popularSort,
+    bool clearPopularSort = false,
+  }) {
+    final nextBody = body ?? this.body;
+    final lines = nextBody
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    return PoetryCatalogRow(
+      id: id ?? this.id,
+      slug: slug ?? this.slug,
+      titleUrdu: titleUrdu ?? this.titleUrdu,
+      titleEnglish: titleEnglish,
+      categorySlug: categorySlug,
+      categoryNameUrdu: categoryNameUrdu,
+      categoryNameEnglish: categoryNameEnglish,
+      poetId: poetId,
+      poetNameUrdu: poetNameUrdu,
+      poetNameEnglish: poetNameEnglish,
+      bookId: bookId,
+      bookTitleUrdu: bookTitleUrdu,
+      bookTitleEnglish: bookTitleEnglish,
+      sortOrder: sortOrder ?? this.sortOrder,
+      body: nextBody,
+      teaserLine1: lines.isEmpty ? null : lines.first,
+      teaserLine2: lines.length > 1 ? lines[1] : null,
+      isPopular: isPopular ?? this.isPopular,
+      popularSort: clearPopularSort ? null : (popularSort ?? this.popularSort),
+    );
   }
 
   factory PoetryCatalogRow.fromMap(Map<String, dynamic> row) {
@@ -187,6 +268,10 @@ class PoetryCatalogRow {
       body: row['body'] as String? ?? '',
       teaserLine1: row['teaser_line_1'] as String?,
       teaserLine2: row['teaser_line_2'] as String?,
+      isPopular: row['is_popular'] == true ||
+          row['is_popular'] == 1 ||
+          row['is_popular'] == 'true',
+      popularSort: (row['popular_sort'] as num?)?.toInt(),
     );
   }
 
@@ -208,6 +293,8 @@ class PoetryCatalogRow {
         'body': body,
         'teaser_line_1': teaserLine1,
         'teaser_line_2': teaserLine2,
+        'is_popular': isPopular,
+        'popular_sort': popularSort,
       };
 
   factory PoetryCatalogRow.placeholder(int index) {

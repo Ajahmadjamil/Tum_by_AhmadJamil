@@ -67,22 +67,39 @@ class ReaderController extends ChangeNotifier {
   ReaderController({
     required List<PoetryCatalogRow> poems,
     required int initialIndex,
+    this.composeCategoryId,
     SessionStore? store,
   })  : poems = List<PoetryCatalogRow>.from(poems),
-        index = initialIndex.clamp(0, poems.isEmpty ? 0 : poems.length - 1),
+        index = poems.isEmpty
+            ? 0
+            : initialIndex.clamp(0, poems.length - 1),
         _store = store ?? SessionStore() {
     _restore();
   }
 
   final SessionStore _store;
   final List<PoetryCatalogRow> poems;
+  String? composeCategoryId;
 
   int index;
   BodyAlign align = BodyAlign.center;
   ReaderFontSize fontSize = ReaderFontSize.medium;
 
+  bool get isComposing => composeCategoryId != null;
+
   PoetryCatalogRow? get current =>
       poems.isEmpty ? null : poems[index.clamp(0, poems.length - 1)];
+
+  void replaceCurrent(PoetryCatalogRow poem) {
+    if (poems.isEmpty) {
+      poems.add(poem);
+      index = 0;
+    } else {
+      poems[index] = poem;
+    }
+    composeCategoryId = null;
+    notifyListeners();
+  }
 
   String get body => current?.body.trim() ?? '';
 

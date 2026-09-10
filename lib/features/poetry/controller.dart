@@ -69,6 +69,23 @@ class CatalogController extends ChangeNotifier {
     return poemsForCategory(selectedCategorySlug);
   }
 
+  List<CategoryRow> get visibleCategories {
+    final showMashoor = countForCategory(CategoryRow.mashoorSlug) > 0;
+    return [
+      for (final category in categories)
+        if (!category.isMashoor || showMashoor) category,
+    ];
+  }
+
+  List<CategoryRow> categoriesForBrowse(String? selectedSlug) {
+    final visible = visibleCategories;
+    if (selectedSlug == CategoryRow.mashoorSlug &&
+        !visible.any((category) => category.isMashoor)) {
+      return [CategoryRow.mashoor, ...visible];
+    }
+    return visible;
+  }
+
   List<PoetryCatalogRow> poemsForCategory(String? slug) {
     if (slug == null) return _sortedCatalog;
     return _poemsByCategory[slug] ?? const [];
@@ -148,7 +165,7 @@ class CatalogController extends ChangeNotifier {
   }
 
   void _applySnapshot(CatalogSnapshot snapshot) {
-    categories = snapshot.categories;
+    categories = _withMashoor(snapshot.categories);
     poets = snapshot.poets;
     books = snapshot.books;
     catalog = snapshot.catalog;
@@ -165,13 +182,25 @@ class CatalogController extends ChangeNotifier {
 
     final byCategory = <String, List<PoetryCatalogRow>>{};
     final byBook = <String, List<PoetryCatalogRow>>{};
+    final popular = <PoetryCatalogRow>[];
     for (final poem in sorted) {
-      (byCategory[poem.categorySlug] ??= []).add(poem);
+      if (poem.categorySlug != CategoryRow.mashoorSlug) {
+        (byCategory[poem.categorySlug] ??= []).add(poem);
+      }
+      if (poem.isPopular) popular.add(poem);
       final bookId = poem.bookId;
       if (bookId != null) {
         (byBook[bookId] ??= []).add(poem);
       }
     }
+    popular.sort((a, b) {
+      final as = a.popularSort ?? a.sortOrder;
+      final bs = b.popularSort ?? b.sortOrder;
+      final byPopular = as.compareTo(bs);
+      if (byPopular != 0) return byPopular;
+      return a.sortOrder.compareTo(b.sortOrder);
+    });
+    byCategory[CategoryRow.mashoorSlug] = popular;
     _poemsByCategory = byCategory;
     _poemsByBook = byBook;
     _categoryCounts = {
@@ -188,6 +217,199 @@ class CatalogController extends ChangeNotifier {
     _visibleCache = null;
     notifyListeners();
   }
+
+  List<BookRow> booksEditableBy({required bool Function(String poetId) canEdit}) {
+    return books.where((book) => canEdit(book.poetId)).toList(growable: false);
+  }
+
+  Future<String> publishPoem({
+    required String categoryId,
+    required String bookId,
+    required String titleUrdu,
+    required String body,
+    String? titleEnglish,
+  }) async {
+    final id = await _repository.createPoetryPost(
+      categoryId: categoryId,
+      bookId: bookId,
+      titleUrdu: titleUrdu,
+      body: body,
+      titleEnglish: titleEnglish,
+    );
+    await refreshFromNetwork();
+    return id;
+  }
+
+  Future<void> updatePoem({
+    required String poetryId,
+    required String titleUrdu,
+    required String body,
+  }) async {
+    await _repository.updatePoetryPost(
+      poetryId: poetryId,
+      titleUrdu: titleUrdu,
+      body: body,
+    );
+    final existing = poemById(poetryId);
+    if (existing != null) {
+      catalog = [
+        for (final poem in catalog)
+          if (poem.id == poetryId)
+            existing.copyWith(titleUrdu: titleUrdu, body: body)
+          else
+            poem,
+      ];
+      _rebuildIndexes();
+      notifyListeners();
+    }
+    unawaited(refreshFromNetwork());
+  }
+
+  Future<void> setPopular(String poetryId, bool isPopular) async {
+    final existing = poemById(poetryId);
+    if (existing == null || existing.isPopular == isPopular) return;
+    var nextPopularSort = existing.popularSort;
+    if (isPopular) {
+      var maxSort = 0;
+      for (final poem in catalog) {
+        if (poem.isPopular) {
+          final sort = poem.popularSort ?? 0;
+          if (sort > maxSort) maxSort = sort;
+        }
+      }
+      nextPopularSort = maxSort + 1;
+    }
+    catalog = [
+      for (final poem in catalog)
+        if (poem.id == poetryId)
+          poem.copyWith(
+            isPopular: isPopular,
+            popularSort: isPopular ? nextPopularSort : null,
+            clearPopularSort: !isPopular,
+          )
+        else
+          poem,
+    ];
+    _rebuildIndexes();
+    notifyListeners();
+    try {
+      await _repository.setPoetryPopular(
+        poetryId: poetryId,
+        isPopular: isPopular,
+      );
+    } catch (_) {
+      catalog = [
+        for (final poem in catalog)
+          if (poem.id == poetryId)
+            poem.copyWith(
+              isPopular: existing.isPopular,
+              popularSort: existing.popularSort,
+              clearPopularSort: existing.popularSort == null,
+            )
+          else
+            poem,
+      ];
+      _rebuildIndexes();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> reorderPoems({
+    required String? categorySlug,
+    required int oldIndex,
+    required int newIndex,
+  }) async {
+    var target = newIndex;
+    if (oldIndex < target) target -= 1;
+    if (oldIndex == target) return;
+
+    final current = List<PoetryCatalogRow>.from(poemsForCategory(categorySlug));
+    if (oldIndex < 0 || oldIndex >= current.length) return;
+    if (target < 0 || target >= current.length) return;
+
+    final moved = current.removeAt(oldIndex);
+    current.insert(target, moved);
+    final order = <String, int>{
+      for (var i = 0; i < current.length; i++) current[i].id: i + 1,
+    };
+    final popular = categorySlug == CategoryRow.mashoorSlug;
+    final previous = catalog;
+    if (popular) {
+      catalog = [
+        for (final poem in catalog)
+          if (order.containsKey(poem.id))
+            poem.copyWith(popularSort: order[poem.id])
+          else
+            poem,
+      ];
+    } else {
+      final slots = [for (final poem in current) poem.sortOrder]..sort();
+      catalog = [
+        for (final poem in catalog)
+          if (order.containsKey(poem.id))
+            poem.copyWith(sortOrder: slots[order[poem.id]! - 1])
+          else
+            poem,
+      ];
+    }
+    _rebuildIndexes();
+    notifyListeners();
+    try {
+      final ids = current.map((poem) => poem.id).toList(growable: false);
+      if (popular) {
+        await _repository.reorderPopularPosts(ids);
+      } else {
+        await _repository.reorderPoetryPosts(ids);
+      }
+    } catch (_) {
+      catalog = previous;
+      _rebuildIndexes();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  List<PoetryCatalogRow> trash = const [];
+  bool trashLoading = false;
+
+  Future<void> loadTrash() async {
+    trashLoading = true;
+    notifyListeners();
+    try {
+      trash = await _repository.fetchTrash();
+    } finally {
+      trashLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> moveToTrash(String poetryId) async {
+    await _repository.trashPoetryPost(poetryId);
+    catalog = [for (final poem in catalog) if (poem.id != poetryId) poem];
+    _rebuildIndexes();
+    notifyListeners();
+    unawaited(refreshFromNetwork());
+  }
+
+  Future<void> restoreFromTrash(String poetryId) async {
+    await _repository.restorePoetryPost(poetryId);
+    trash = [for (final poem in trash) if (poem.id != poetryId) poem];
+    notifyListeners();
+    await refreshFromNetwork();
+  }
+
+  Future<void> purgeFromTrash(String poetryId) async {
+    await _repository.purgePoetryPost(poetryId);
+    trash = [for (final poem in trash) if (poem.id != poetryId) poem];
+    notifyListeners();
+  }
+
+  Future<void> emptyTrash() async {
+    await _repository.emptyPoetryTrash();
+    trash = const [];
+    notifyListeners();
+  }
 }
 
 const _categoryDisplayOrder = ['ghazal', 'nazm', 'shair', 'qataa', 'tehreer'];
@@ -200,4 +422,14 @@ List<CategoryRow> _sortedCategories(List<CategoryRow> categories) {
     return (ai < 0 ? 999 : ai).compareTo(bi < 0 ? 999 : bi);
   });
   return ranked;
+}
+
+List<CategoryRow> _withMashoor(List<CategoryRow> categories) {
+  return [
+    CategoryRow.mashoor,
+    ..._sortedCategories([
+      for (final category in categories)
+        if (!category.isMashoor) category,
+    ]),
+  ];
 }

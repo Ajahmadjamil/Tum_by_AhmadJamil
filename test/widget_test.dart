@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
 
+import 'package:tum/core/auth/auth_controller.dart';
 import 'package:tum/core/locale/locale_controller.dart';
 import 'package:tum/core/theme/app_theme.dart';
 import 'package:tum/core/theme/theme_controller.dart';
@@ -12,13 +13,15 @@ import 'package:tum/features/shell/view.dart';
 
 void main() {
   testWidgets('shows home shell with bottom navigation', (tester) async {
+    final auth = AuthController();
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => LocaleController()),
           ChangeNotifierProvider(create: (_) => ThemeController()),
           ChangeNotifierProvider(create: (_) => CatalogController()),
-          ChangeNotifierProvider(create: (_) => FavoritesController()),
+          ChangeNotifierProvider.value(value: auth),
+          ChangeNotifierProvider(create: (_) => FavoritesController(auth: auth)),
         ],
         child: MaterialApp(
           theme: AppTheme.light,
