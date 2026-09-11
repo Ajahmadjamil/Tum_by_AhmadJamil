@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:tum/core/notification/notification.dart';
-
 import 'core/auth/auth_controller.dart';
 import 'core/locale/locale_controller.dart';
 import 'core/supabase/app_supabase.dart';

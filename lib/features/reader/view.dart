@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/alerts/show_dialogs.dart';
@@ -12,7 +13,7 @@ import '../favorites/controller.dart';
 import '../poetry/controller.dart';
 import '../poetry/models.dart';
 import 'controller.dart';
-import 'rtl_editing_controller.dart';
+import 'rtl_edit_log.dart';
 
 void openReader(
   BuildContext context, {
@@ -75,8 +76,8 @@ class _ReaderBody extends StatefulWidget {
 }
 
 class _ReaderBodyState extends State<_ReaderBody> {
-  final _title = RtlTextEditingController();
-  final _body = RtlTextEditingController();
+  final _title = LoggingTextEditingController(label: 'TITLE');
+  final _body = LoggingTextEditingController(label: 'BODY');
   final _titleFocus = FocusNode();
   final _bodyFocus = FocusNode();
   final _dirty = ValueNotifier(false);
@@ -127,7 +128,8 @@ class _ReaderBodyState extends State<_ReaderBody> {
     if (mounted) setState(() {});
   }
 
-  bool _canEdit(PoetryCatalogRow? poem, AuthController auth, ReaderController reader) {
+  bool _canEdit(
+      PoetryCatalogRow? poem, AuthController auth, ReaderController reader) {
     if (poem == null) return false;
     if (reader.isComposing || poem.isDraft) return auth.hasEditPermission;
     return auth.canEditPoet(poem.poetId);
@@ -139,17 +141,11 @@ class _ReaderBodyState extends State<_ReaderBody> {
     _body.removeListener(_onEdited);
     _title.value = TextEditingValue(
       text: poem.titleUrdu,
-      selection: TextSelection.collapsed(
-        offset: poem.titleUrdu.length,
-        affinity: TextAffinity.upstream,
-      ),
+      selection: TextSelection.collapsed(offset: poem.titleUrdu.length),
     );
     _body.value = TextEditingValue(
       text: poem.body,
-      selection: TextSelection.collapsed(
-        offset: poem.body.length,
-        affinity: TextAffinity.upstream,
-      ),
+      selection: TextSelection.collapsed(offset: poem.body.length),
     );
     _title.addListener(_onEdited);
     _body.addListener(_onEdited);
@@ -201,7 +197,8 @@ class _ReaderBodyState extends State<_ReaderBody> {
           body: body,
         );
         if (!mounted) return;
-        final created = catalog.poemById(id) ?? poem.copyWith(id: id, titleUrdu: title, body: body);
+        final created = catalog.poemById(id) ??
+            poem.copyWith(id: id, titleUrdu: title, body: body);
         reader.replaceCurrent(created);
         _boundId = created.id;
       } else {
@@ -284,7 +281,8 @@ class _ReaderBodyState extends State<_ReaderBody> {
     }
 
     final notes = _canEdit(poem, auth, reader);
-    final title = locale.pick(urdu: poem.titleUrdu, english: poem.titleEnglish ?? '');
+    final title =
+        locale.pick(urdu: poem.titleUrdu, english: poem.titleEnglish ?? '');
     final book = locale.pick(
       urdu: poem.bookTitleUrdu ?? '',
       english: poem.bookTitleEnglish ?? '',
@@ -378,7 +376,8 @@ class _ReaderBodyState extends State<_ReaderBody> {
                                 child: SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
                                 ),
                               );
                             }
@@ -391,7 +390,9 @@ class _ReaderBodyState extends State<_ReaderBody> {
                                   onPressed: dirty ? _save : null,
                                   icon: Icon(
                                     Icons.upload_rounded,
-                                    color: dirty ? colors.accent : colors.textMuted,
+                                    color: dirty
+                                        ? colors.accent
+                                        : colors.textMuted,
                                   ),
                                 );
                               },
@@ -423,7 +424,8 @@ class _ReaderBodyState extends State<_ReaderBody> {
                     children: [
                       Text(
                         '${reader.index + 1}',
-                        style: AppTextStyles.ui(fontSize: 14, color: colors.textMuted),
+                        style: AppTextStyles.ui(
+                            fontSize: 14, color: colors.textMuted),
                       ),
                       const Spacer(),
                       Text(
@@ -505,7 +507,8 @@ class _ReaderBodyState extends State<_ReaderBody> {
                           )
                         : ScrollHaptics(
                             child: ListView(
-                              padding: const EdgeInsets.fromLTRB(28, 36, 28, 24),
+                              padding:
+                                  const EdgeInsets.fromLTRB(28, 36, 28, 24),
                               physics: const ClampingScrollPhysics(),
                               cacheExtent: 400,
                               addAutomaticKeepAlives: false,
@@ -750,6 +753,11 @@ class _SizeButton extends StatelessWidget {
 
 /// Plain RTL editor. Naskh + right align so the caret, space, and backspace
 /// follow Urdu letters the way a notepad does. Nastaliq shaping skips glyphs.
+///
+/// Caret movement is left entirely to Flutter's bidi engine: insert and delete
+/// are logical operations, so existing text edits exactly like freshly typed
+/// text. Do not re-add caret/affinity or backspace overrides here — they only
+/// ever fire mid-text and are what made loaded poems edit backwards.
 class _UrduNoteField extends StatelessWidget {
   const _UrduNoteField({
     super.key,
@@ -765,7 +773,7 @@ class _UrduNoteField extends StatelessWidget {
     this.onSubmitted,
   });
 
-  final TextEditingController controller;
+  final LoggingTextEditingController controller;
   final FocusNode focusNode;
   final TextStyle style;
   final String hint;
@@ -780,49 +788,66 @@ class _UrduNoteField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: TextField(
-          controller: controller,
-          focusNode: focusNode,
-          maxLines: maxLines,
-          expands: expands,
-          minLines: expands ? null : (maxLines == 1 ? 1 : null),
-          textAlign: TextAlign.start,
-          textAlignVertical: TextAlignVertical.top,
-          textDirection: TextDirection.rtl,
-          hintLocales: const [Locale('ur')],
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          textCapitalization: TextCapitalization.none,
-          autocorrect: false,
-          enableSuggestions: true,
-          smartDashesType: SmartDashesType.disabled,
-          smartQuotesType: SmartQuotesType.disabled,
-          spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
-          onSubmitted: onSubmitted,
-          onTap: () {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              final selection = controller.selection;
-              if (!selection.isValid || !selection.isCollapsed) return;
-              controller.selection = TextSelection.collapsed(
-                offset: selection.extentOffset,
-                affinity: TextAffinity.upstream,
-              );
-            });
-          },
-          scrollPadding: EdgeInsets.only(
-            bottom: MediaQuery.viewInsetsOf(context).bottom + 48,
-          ),
-          scrollPhysics: const ClampingScrollPhysics(),
-          style: style,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintTextDirection: TextDirection.rtl,
-            hintStyle: hintStyle,
-            border: InputBorder.none,
-            isCollapsed: false,
-            contentPadding: const EdgeInsets.symmetric(vertical: 4),
+      child: RtlEditLogger(
+        label: controller.label,
+        controller: controller,
+        child: Shortcuts(
+          shortcuts: _rtlArrowKeys,
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            maxLines: maxLines,
+            expands: expands,
+            minLines: expands ? null : (maxLines == 1 ? 1 : null),
+            textAlign: TextAlign.start,
+            textAlignVertical: TextAlignVertical.top,
+            textDirection: TextDirection.rtl,
+            hintLocales: const [Locale('ur')],
+            keyboardType: keyboardType,
+            textInputAction: textInputAction,
+            textCapitalization: TextCapitalization.none,
+            autocorrect: false,
+            // Keep the IME's composing region alive. Setting this false puts
+            // NO_SUGGESTIONS on the field and Gboard drops its Urdu word
+            // model, which is what made editing feel unlike a notes app.
+            enableSuggestions: debugUrduSuggestions,
+            smartDashesType: SmartDashesType.disabled,
+            smartQuotesType: SmartQuotesType.disabled,
+            spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
+            onSubmitted: onSubmitted,
+            scrollPadding: EdgeInsets.only(
+              bottom: MediaQuery.viewInsetsOf(context).bottom + 48,
+            ),
+            scrollPhysics: const ClampingScrollPhysics(),
+            style: style,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintTextDirection: TextDirection.rtl,
+              hintStyle: hintStyle,
+              border: InputBorder.none,
+              isCollapsed: false,
+              contentPadding: const EdgeInsets.symmetric(vertical: 4),
+            ),
           ),
         ),
-      );
+      ),
+    );
   }
 }
+
+/// Flutter moves the caret by *logical* offset, so in RTL text the left arrow
+/// walks it to a lower offset — visually to the right. Gboard's spacebar
+/// cursor-slide sends these same key events, which is how it shows up on a
+/// phone with no arrow keys. Swap the pair so the caret follows the finger.
+const Map<ShortcutActivator, Intent> _rtlArrowKeys =
+    <ShortcutActivator, Intent>{
+  SingleActivator(LogicalKeyboardKey.arrowLeft):
+      ExtendSelectionByCharacterIntent(forward: true, collapseSelection: true),
+  SingleActivator(LogicalKeyboardKey.arrowRight):
+      ExtendSelectionByCharacterIntent(forward: false, collapseSelection: true),
+  SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true):
+      ExtendSelectionByCharacterIntent(forward: true, collapseSelection: false),
+  SingleActivator(LogicalKeyboardKey.arrowRight, shift: true):
+      ExtendSelectionByCharacterIntent(
+          forward: false, collapseSelection: false),
+};
